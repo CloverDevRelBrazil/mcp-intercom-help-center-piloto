@@ -107,6 +107,43 @@
             font-weight: 300;
         }
 
+        .features-section {
+            background: var(--white);
+            padding: 60px 20px;
+            margin: 0;
+        }
+
+        .features-container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            margin-top: 40px;
+        }
+
+        .feature-box {
+            padding: 30px;
+            background: var(--light-gray);
+            border-radius: 12px;
+            border-left: 4px solid var(--primary-green);
+        }
+
+        .feature-box h3 {
+            color: var(--primary-green);
+            font-size: 20px;
+            margin-bottom: 12px;
+        }
+
+        .feature-box p {
+            color: #666;
+            font-size: 15px;
+            line-height: 1.6;
+        }
+
         .btn {
             padding: 14px 32px;
             border: none;
@@ -115,14 +152,16 @@
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s;
-            background: var(--white);
-            color: var(--primary-green);
+            background: var(--primary-green);
+            color: var(--white);
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            margin-top: 20px;
         }
 
         .btn:hover {
             transform: translateY(-2px);
             box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+            background: var(--dark-green);
         }
 
         .chat-container {
@@ -256,6 +295,16 @@
             0%, 100% { opacity: 0.3; }
             50% { opacity: 1; }
         }
+
+        @media (max-width: 768px) {
+            .features-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .hero h1 {
+                font-size: 36px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -281,7 +330,25 @@
         <div class="hero-container">
             <h1>Integração Simples, Resultados Poderosos</h1>
             <p>A plataforma completa para desenvolvedores para integrar com confiança e velocidade</p>
-            <button class="btn" onclick="startChat()">Começar Agora</button>
+        </div>
+    </section>
+
+    <section class="features-section" id="featuresSection">
+        <div class="features-container">
+            <div class="features-grid">
+                <div class="feature-box">
+                    <h3>🔍 Respostas Instantâneas</h3>
+                    <p>Tire dúvidas sobre integração, autenticação, APIs e endpoints. Busque artigos do Help Center Clover em tempo real e obtenha respostas diretas às suas perguntas técnicas.</p>
+                </div>
+                <div class="feature-box">
+                    <h3>💻 Exemplos de Código</h3>
+                    <p>Acesse exemplos prontos em Node.js, Python, Java, Flutter, React e muito mais. Adapte o código para sua tecnologia e comece a integrar em minutos, não em dias.</p>
+                </div>
+            </div>
+
+            <div style="text-align: center;">
+                <button class="btn" onclick="startChat()">Começar Agora</button>
+            </div>
         </div>
     </section>
 
@@ -289,7 +356,7 @@
         <div class="chat-messages" id="chatMessages">
             <div class="message system">
                 <div class="message-content">
-                    🎉 Bem-vindo ao Clover DevRel! MCP conectado e pronto para ajudar você a desenvolver integrações incríveis.
+                    🎉 Bem-vindo ao Clover DevRel! Você pode fazer perguntas sobre integração, pedir exemplos de código e tirar dúvidas técnicas. Comece digitando sua pergunta!
                 </div>
             </div>
         </div>
@@ -300,7 +367,7 @@
                     type="text" 
                     class="chat-input" 
                     id="chatInput" 
-                    placeholder="Digite sua pergunta sobre integração Clover..."
+                    placeholder="Ex: integração, API, autenticação, Flutter..."
                     onkeypress="handleKeyPress(event)"
                 >
                 <button class="send-btn" id="sendBtn" onclick="sendMessage()">Enviar</button>
@@ -313,13 +380,16 @@
         const chatInput = document.getElementById('chatInput');
         const sendBtn = document.getElementById('sendBtn');
         const heroSection = document.getElementById('heroSection');
+        const featuresSection = document.getElementById('featuresSection');
         const chatContainer = document.getElementById('chatContainer');
 
         const MCP_URL = 'https://mcp-intercom-help-center-piloto-v2.onrender.com';
         let mcpToken = null;
 
         function startChat() {
+            console.log('Iniciando chat...');
             heroSection.classList.add('hidden');
+            featuresSection.classList.add('hidden');
             chatContainer.classList.add('active');
             chatInput.focus();
         }
@@ -340,6 +410,7 @@
                 });
                 const data = await response.json();
                 mcpToken = data.jwt;
+                console.log('Login MCP sucesso');
                 return true;
             } catch (error) {
                 console.error('Erro ao fazer login no MCP:', error);
@@ -367,7 +438,7 @@
 
             const loadingDiv = document.createElement('div');
             loadingDiv.className = 'message assistant';
-            loadingDiv.innerHTML = '<div class="message-content"><span class="loading"></span>Buscando no Help Center Clover...</div>';
+            loadingDiv.innerHTML = '<div class="message-content"><span class="loading"></span>Buscando no Help Center...</div>';
             chatMessagesDiv.appendChild(loadingDiv);
             chatMessagesDiv.scrollTop = chatMessagesDiv.scrollHeight;
 
