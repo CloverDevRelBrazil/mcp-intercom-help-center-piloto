@@ -1,5 +1,4 @@
 import express from "express";
-import helmet from "helmet";
 import cors from "cors";
 import rateLimit from "express-rate-limit";
 import { query, validationResult } from "express-validator";
@@ -14,10 +13,6 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-
-app.use(helmet({
-  contentSecurityPolicy: false,
-}));
 
 app.use(cors({
   origin: "*",
