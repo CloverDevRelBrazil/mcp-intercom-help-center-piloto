@@ -76,496 +76,15 @@
         .hero {
             background: linear-gradient(135deg, var(--primary-green) 0%, var(--dark-green) 100%);
             color: var(--white);
-            padding: 40px 20px;
+            padding: 120px 20px;
             text-align: center;
             transition: opacity 0.3s, visibility 0.3s;
-        }
-
-        .hero.hidden {
-            opacity: 0;
-            visibility: hidden;
-            display: none;
-        }
-
-        .hero-container {
-            max-width: 900px;
-            margin: 0 auto;
-        }
-
-        .hero h1 {
-            font-size: 32px;
-            font-weight: 800;
-            line-height: 1.3;
-            letter-spacing: -0.5px;
-        }
-
-        .features-section {
-            background: var(--white);
-            padding: 60px 20px;
-            margin: 0;
-        }
-
-        .features-container {
-            max-width: 1000px;
-            margin: 0 auto;
-        }
-
-        .features-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 40px;
-            margin-top: 40px;
-        }
-
-        .feature-box {
-            padding: 30px;
-            background: var(--light-gray);
-            border-radius: 12px;
-            border-left: 4px solid var(--primary-green);
-        }
-
-        .feature-box h3 {
-            color: var(--primary-green);
-            font-size: 20px;
-            margin-bottom: 12px;
-        }
-
-        .feature-box p {
-            color: #666;
-            font-size: 15px;
-            line-height: 1.6;
-        }
-
-        .btn {
-            padding: 14px 32px;
-            border: none;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-            background: var(--primary-green);
-            color: var(--white);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-            margin-top: 20px;
-        }
-
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
-            background: var(--dark-green);
-        }
-
-        .chat-container {
-            display: none;
-            height: 100vh;
-            flex-direction: column;
-            background: var(--light-gray);
-            padding-top: 0;
-        }
-
-        .chat-container.active {
-            display: flex;
-        }
-
-        .chat-messages {
-            flex: 1;
-            overflow-y: auto;
-            padding: 20px;
-            max-width: 900px;
-            margin: 0 auto;
-            width: 100%;
-        }
-
-        .message {
-            margin-bottom: 16px;
-            display: flex;
-            gap: 12px;
-            animation: slideIn 0.3s ease;
-        }
-
-        @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .message.user {
-            justify-content: flex-end;
-        }
-
-        .message-content {
-            max-width: 70%;
-            padding: 12px 16px;
-            border-radius: 12px;
-            word-wrap: break-word;
-        }
-
-        .message.user .message-content {
-            background: var(--primary-green);
-            color: var(--white);
-        }
-
-        .message.assistant .message-content {
-            background: var(--white);
-            color: var(--dark-text);
-            border: 1px solid #e0e0e0;
-        }
-
-        .message.system .message-content {
-            background: #e8f5e9;
-            color: var(--primary-green);
-            font-size: 13px;
-        }
-
-        .chat-input-area {
-            background: var(--white);
-            padding: 20px;
-            border-top: 1px solid #e0e0e0;
-            max-width: 900px;
-            margin: 0 auto;
-            width: 100%;
-        }
-
-        .input-wrapper {
-            display: flex;
-            gap: 10px;
-        }
-
-        .chat-input {
-            flex: 1;
-            padding: 12px 16px;
-            border: 1px solid #e0e0e0;
-            border-radius: 24px;
-            font-size: 14px;
-            font-family: inherit;
-        }
-
-        .chat-input:focus {
-            outline: none;
-            border-color: var(--primary-green);
-            box-shadow: 0 0 0 3px rgba(0, 68, 0, 0.1);
-        }
-
-        .send-btn {
-            padding: 12px 24px;
-            background: var(--primary-green);
-            color: var(--white);
-            border: none;
-            border-radius: 24px;
-            cursor: pointer;
-            font-weight: 600;
-            transition: all 0.3s;
-        }
-
-        .send-btn:hover {
-            background: var(--dark-green);
-            transform: scale(1.05);
-        }
-
-        .send-btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        .loading {
-            display: inline-block;
-            width: 8px;
-            height: 8px;
-            background: var(--primary-green);
-            border-radius: 50%;
-            animation: pulse 1.5s infinite;
-            margin-right: 4px;
-        }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 0.3; }
-            50% { opacity: 1; }
-        }
-
-        @media (max-width: 768px) {
-            .features-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .hero h1 {
-                font-size: 24px;
-            }
-        }
-    </style>
-</head>
-<body>
-    <header>
-        <div class="header-container">
-            <div class="logo-section">
-                <div class="logo-icon">
-                    <svg width="1024" height="1024" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M478.378 239.189C478.378 107.184 371.238 0 239.138 0C107.068 0 0 107.048 0 239.052C0 371.056 107.066 478.378 239.197 478.378H478.377L478.378 239.189Z" fill="#228800"/>
-                        <path d="M545.622 239.189C545.622 107.184 652.763 0 784.863 0C916.932 0 1024 107.048 1024 239.053C1024 371.056 916.933 478.378 784.802 478.378L545.623 478.378L545.622 239.189Z" fill="#228800"/>
-                        <path d="M545.622 784.81C545.622 916.945 652.732 1024 784.884 1024C916.891 1024 1024 917.023 1024 784.889C1024 652.88 916.892 545.621 784.801 545.621L545.622 545.622V784.81Z" fill="#228800"/>
-                        <path d="M478.378 784.81C478.378 916.945 371.269 1024 239.117 1024C107.11 1024 0 917.023 0 784.889C0 652.88 107.108 545.621 239.198 545.621H478.378V784.81ZM239.117 956.551C334.047 956.551 411.279 879.545 411.279 784.889V612.757H239.335C144.362 612.757 67.0902 690.273 67.0902 784.889C67.0902 879.545 144.258 956.551 239.117 956.551Z" fill="#228800"/>
-                    </svg>
-                </div>
-                <div>
-                    <div class="brand-name">Clover DevRel</div>
-                </div>
-            </div>
-        </div>
-    </header>
-
-    <section class="hero" id="heroSection">
-        <div class="hero-container">
-            <h1>Respostas instantâneas e exemplos de código para sua integração Clover</h1>
-        </div>
-    </section>
-
-    <section class="features-section" id="featuresSection">
-        <div class="features-container">
-            <div class="features-grid">
-                <div class="feature-box">
-                    <h3>🔍 Respostas Instantâneas</h3>
-                    <p>Tire dúvidas sobre integração, autenticação, APIs e endpoints. Busque artigos do Help Center Clover em tempo real e obtenha respostas diretas às suas perguntas técnicas.</p>
-                </div>
-                <div class="feature-box">
-                    <h3>💻 Exemplos de Código</h3>
-                    <p>Acesse exemplos prontos em Node.js, Python, Java, Flutter, React e muito mais. Adapte o código para sua tecnologia e comece a integrar em minutos, não em dias.</p>
-                </div>
-            </div>
-
-            <div style="text-align: center;">
-                <button class="btn" onclick="startChat()">Começar Agora</button>
-            </div>
-        </div>
-    </section>
-
-    <div class="chat-container" id="chatContainer">
-        <div class="chat-messages" id="chatMessages">
-            <div class="message system">
-                <div class="message-content">
-                    🎉 Bem-vindo ao Clover DevRel! Você pode fazer perguntas sobre integração, pedir exemplos de código e tirar dúvidas técnicas. Comece digitando sua pergunta!
-                </div>
-            </div>
-        </div>
-
-        <div class="chat-input-area">
-            <div class="input-wrapper">
-                <input 
-                    type="text" 
-                    class="chat-input" 
-                    id="chatInput" 
-                    placeholder="Ex: integração, API, autenticação, Flutter..."
-                    onkeypress="handleKeyPress(event)"
-                >
-                <button class="send-btn" id="sendBtn" onclick="sendMessage()">Enviar</button>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        const chatMessagesDiv = document.getElementById('chatMessages');
-        const chatInput = document.getElementById('chatInput');
-        const sendBtn = document.getElementById('sendBtn');
-        const heroSection = document.getElementById('heroSection');
-        const featuresSection = document.getElementById('featuresSection');
-        const chatContainer = document.getElementById('chatContainer');
-
-        const MCP_URL = 'https://mcp-intercom-help-center-piloto-v2.onrender.com';
-        let mcpToken = null;
-
-        function startChat() {
-            console.log('Iniciando chat...');
-            heroSection.classList.add('hidden');
-            featuresSection.classList.add('hidden');
-            chatContainer.classList.add('active');
-            chatInput.focus();
-        }
-
-        function handleKeyPress(event) {
-            if (event.key === 'Enter' && !event.shiftKey) {
-                event.preventDefault();
-                sendMessage();
-            }
-        }
-
-        async function loginToMCP() {
-            try {
-                const response = await fetch(`${MCP_URL}/api/login`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ token: 'demo-token' })
-                });
-                const data = await response.json();
-                mcpToken = data.jwt;
-                console.log('Login MCP sucesso');
-                return true;
-            } catch (error) {
-                console.error('Erro ao fazer login no MCP:', error);
-                return false;
-            }
-        }
-
-        async function sendMessage() {
-            const message = chatInput.value.trim();
-            if (!message) return;
-
-            if (!mcpToken) {
-                const loginSuccess = await loginToMCP();
-                if (!loginSuccess) {
-                    addMessage('❌ Erro ao conectar ao MCP. Verifique a conexão.', 'assistant');
-                    return;
-                }
-            }
-
-            chatInput.disabled = true;
-            sendBtn.disabled = true;
-
-            addMessage(message, 'user');
-            chatInput.value = '';
-
-            const loadingDiv = document.createElement('div');
-            loadingDiv.className = 'message assistant';
-            loadingDiv.innerHTML = '<div class="message-content"><span class="loading"></span>Buscando no Help Center...</div>';
-            chatMessagesDiv.appendChild(loadingDiv);
-            chatMessagesDiv.scrollTop = chatMessagesDiv.scrollHeight;
-
-            try {
-                const response = await fetch(`${MCP_URL}/api/search?query=${encodeURIComponent(message)}`, {
-                    method: 'GET',
-                    headers: {
-                        'Authorization': `Bearer ${mcpToken}`,
-                        'Content-Type': 'application/json'
-                    }
-                });
-
-                const data = await response.json();
-                
-                loadingDiv.remove();
-
-                if (data.articles && data.articles.length > 0) {
-                    let responseText = `📚 Encontrei ${data.articles.length} artigo(s):\n\n`;
-                    data.articles.forEach((article, index) => {
-                        responseText += `${index + 1}. ${article.title}\n`;
-                    });
-                    addMessage(responseText, 'assistant');
-                } else {
-                    addMessage('Nenhum artigo encontrado. Tente com outras palavras!', 'assistant');
-                }
-            } catch (error) {
-                loadingDiv.remove();
-                addMessage('⚠️ Erro ao conectar ao MCP. Verifique a conexão.', 'assistant');
-                console.error('Error:', error);
-            }
-
-            chatInput.disabled = false;
-            sendBtn.disabled = false;
-            chatInput.focus();
-        }
-
-        function addMessage(text, sender) {
-            const messageDiv = document.createElement('div');
-            messageDiv.className = `message ${sender}`;
-            messageDiv.innerHTML = `<div class="message-content">${escapeHtml(text)}</div>`;
-            chatMessagesDiv.appendChild(messageDiv);
-            chatMessagesDiv.scrollTop = chatMessagesDiv.scrollHeight;
-        }
-
-        function escapeHtml(text) {
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        }
-    </script>
-</body>
-</html>
-EOFcat > index.html << 'EOF'
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Clover DevRel - Integração e Inovação</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        :root {
-            --primary-green: #004400;
-            --dark-green: #003300;
-            --white: #ffffff;
-            --light-gray: #f5f5f5;
-            --dark-text: #1a1a1a;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
-            color: var(--dark-text);
-            line-height: 1.6;
-            background: var(--white);
-        }
-
-        header {
-            background: linear-gradient(135deg, var(--primary-green) 0%, var(--dark-green) 100%);
-            color: var(--white);
-            padding: 20px 0;
-            box-shadow: 0 2px 8px rgba(0, 68, 0, 0.15);
-            position: sticky;
-            top: 0;
-            z-index: 1000;
-        }
-
-        .header-container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .logo-section {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
-        .logo-icon {
-            width: 50px;
-            height: 50px;
-            background: var(--white);
-            border-radius: 8px;
-            padding: 8px;
+            min-height: 80vh;
             display: flex;
             align-items: center;
             justify-content: center;
         }
 
-        .logo-icon svg {
-            width: 100%;
-            height: 100%;
-        }
-
-        .brand-name {
-            font-size: 22px;
-            font-weight: 700;
-            letter-spacing: -0.5px;
-        }
-
-        .hero {
-            background: linear-gradient(135deg, var(--primary-green) 0%, var(--dark-green) 100%);
-            color: var(--white);
-            padding: 40px 20px;
-            text-align: center;
-            transition: opacity 0.3s, visibility 0.3s;
-        }
-
         .hero.hidden {
             opacity: 0;
             visibility: hidden;
@@ -578,67 +97,29 @@ EOFcat > index.html << 'EOF'
         }
 
         .hero h1 {
-            font-size: 32px;
+            font-size: 48px;
             font-weight: 800;
             line-height: 1.3;
             letter-spacing: -0.5px;
-        }
-
-        .features-section {
-            background: var(--white);
-            padding: 60px 20px;
-            margin: 0;
-        }
-
-        .features-container {
-            max-width: 1000px;
-            margin: 0 auto;
-        }
-
-        .features-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 40px;
-            margin-top: 40px;
-        }
-
-        .feature-box {
-            padding: 30px;
-            background: var(--light-gray);
-            border-radius: 12px;
-            border-left: 4px solid var(--primary-green);
-        }
-
-        .feature-box h3 {
-            color: var(--primary-green);
-            font-size: 20px;
-            margin-bottom: 12px;
-        }
-
-        .feature-box p {
-            color: #666;
-            font-size: 15px;
-            line-height: 1.6;
+            margin-bottom: 50px;
         }
 
         .btn {
-            padding: 14px 32px;
+            padding: 20px 50px;
             border: none;
             border-radius: 8px;
-            font-size: 16px;
+            font-size: 18px;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s;
-            background: var(--primary-green);
-            color: var(--white);
+            background: var(--white);
+            color: var(--primary-green);
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-            margin-top: 20px;
         }
 
         .btn:hover {
             transform: translateY(-2px);
             box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
-            background: var(--dark-green);
         }
 
         .chat-container {
@@ -774,12 +255,13 @@ EOFcat > index.html << 'EOF'
         }
 
         @media (max-width: 768px) {
-            .features-grid {
-                grid-template-columns: 1fr;
+            .hero h1 {
+                font-size: 28px;
             }
 
-            .hero h1 {
-                font-size: 24px;
+            .btn {
+                padding: 16px 40px;
+                font-size: 16px;
             }
         }
     </style>
@@ -806,25 +288,7 @@ EOFcat > index.html << 'EOF'
     <section class="hero" id="heroSection">
         <div class="hero-container">
             <h1>Respostas instantâneas e exemplos de código para sua integração Clover</h1>
-        </div>
-    </section>
-
-    <section class="features-section" id="featuresSection">
-        <div class="features-container">
-            <div class="features-grid">
-                <div class="feature-box">
-                    <h3>🔍 Respostas Instantâneas</h3>
-                    <p>Tire dúvidas sobre integração, autenticação, APIs e endpoints. Busque artigos do Help Center Clover em tempo real e obtenha respostas diretas às suas perguntas técnicas.</p>
-                </div>
-                <div class="feature-box">
-                    <h3>💻 Exemplos de Código</h3>
-                    <p>Acesse exemplos prontos em Node.js, Python, Java, Flutter, React e muito mais. Adapte o código para sua tecnologia e comece a integrar em minutos, não em dias.</p>
-                </div>
-            </div>
-
-            <div style="text-align: center;">
-                <button class="btn" onclick="startChat()">Começar Agora</button>
-            </div>
+            <button class="btn" onclick="startChat()">Começar Agora</button>
         </div>
     </section>
 
@@ -856,7 +320,6 @@ EOFcat > index.html << 'EOF'
         const chatInput = document.getElementById('chatInput');
         const sendBtn = document.getElementById('sendBtn');
         const heroSection = document.getElementById('heroSection');
-        const featuresSection = document.getElementById('featuresSection');
         const chatContainer = document.getElementById('chatContainer');
 
         const MCP_URL = 'https://mcp-intercom-help-center-piloto-v2.onrender.com';
@@ -865,7 +328,6 @@ EOFcat > index.html << 'EOF'
         function startChat() {
             console.log('Iniciando chat...');
             heroSection.classList.add('hidden');
-            featuresSection.classList.add('hidden');
             chatContainer.classList.add('active');
             chatInput.focus();
         }
