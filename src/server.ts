@@ -15,12 +15,17 @@ const PORT = process.env.PORT || 3000;
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-app.use(helmet());
-app.use(express.json());
+app.use(helmet({
+  contentSecurityPolicy: false,
+}));
+
 app.use(cors({
-  origin: ["http://localhost:3000", "https://mcp-help.onrender.com"],
+  origin: "*",
   credentials: true
 }));
+
+app.use(express.json());
+app.use(express.static(path.join(__dirname, "../frontend")));
 
 const limiter = rateLimit({
   windowMs: 60 * 60 * 1000,
@@ -52,17 +57,12 @@ app.post("/api/login", (req: any, res: any) => {
     return res.status(401).json({ error: "Token inválido" });
   }
 
-  const jwtToken = jwt.sign(
-    { client_id: clientToken, workspace_id: process.env.INTERCOM_WORKSPACE_ID },
-    process.env.JWT_SECRET || "dev-secret-key",
-    { expiresIn: "24h" }
-  );
-
-  res.json({ accessToken: jwtToken, expiresIn: 86400 });
+  const token = jwt.sign({ token: clientToken }, process.env.JWT_SECRET || "dev-secret-key", { expiresIn: "24h" });
+  res.json({ jwt: token });
 });
 
-app.get("/api/search", validateJWT, [
-  query("q").trim().isLength({ min: 1, max: 100 }).escape()
+app.get("/api/search", [
+  query("query").notEmpty().withMessage("Query obrigatória")
 ], async (req: any, res: any) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
@@ -85,8 +85,6 @@ app.get("/api/search", validateJWT, [
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "../frontend/index.html"));
 });
-
-app.use(express.static(path.join(__dirname, "../frontend")));
 
 app.listen(PORT, () => {
   console.log(`MCP Help Center rodando em http://localhost:${PORT}`);
