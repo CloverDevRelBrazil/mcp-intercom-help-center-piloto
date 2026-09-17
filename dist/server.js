@@ -2,8 +2,6 @@ import express from "express";
 import path from "path";
 import jwt from "jsonwebtoken";
 import rateLimit from "express-rate-limit";
-import { Server } from "@modelcontextprotocol/sdk/server/index.js";
-import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 const app = express();
 const PORT = process.env.PORT || 3000;
 const JWT_SECRET = process.env.JWT_SECRET || "meu_secret_super_seguro_12345";
@@ -19,37 +17,18 @@ app.use((req, res, next) => {
     next();
 });
 app.use(express.json());
-const limiter = rateLimit({
-    windowMs: 15 * 60 * 1000,
-    max: 100
-});
+const limiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 100 });
 app.use(limiter);
-// ============ TOOLS COMPARTILHADAS ============
-const mockArticles = [
-    { title: "Guia de Integração", body: "Como integrar sua app com Clover" },
-    { title: "Certificação Clover", body: "Processo de certificação" }
-];
+// ✅ SÓ INTERCOM REAL - SEM MOCK!
 async function searchArticles(query) {
-    try {
-        const response = await fetch(`https://api.intercom.io/articles/search?query=${encodeURIComponent(query)}`, {
-            headers: {
-                Authorization: `Bearer ${INTERCOM_ACCESS_TOKEN}`,
-                Accept: "application/json"
-            }
-        });
-        if (!response.ok)
-            return mockArticles;
-        const data = await response.json();
-        return data.data?.slice(0, 5) || mockArticles;
-    }
-    catch (error) {
-        return mockArticles;
-    }
+    const response = await fetch(`https://api.intercom.io/articles/search?query=${encodeURIComponent(query)}`, { headers: { Authorization: `Bearer ${INTERCOM_ACCESS_TOKEN}`, Accept: "application/json" } });
+    const data = await response.json();
+    return data.data || [];
 }
 async function getIntegrationGuide(level) {
     const guides = {
-        beginner: "1. Crie conta\n2. Configure API keys\n3. Implemente OAuth",
-        intermediate: "1. Webhooks\n2. Retry logic\n3. Error handling",
+        beginner: "1. Crie conta\n2. Configure API\n3. Implemente OAuth",
+        intermediate: "1. Webhooks\n2. Retry\n3. Error handling",
         advanced: "1. Load balancing\n2. Caching\n3. Monitoring"
     };
     return guides[level] || guides.beginner;
@@ -65,14 +44,13 @@ async function getApiExamples(language) {
 }
 async function getFaq(topic) {
     const faqs = {
-        authentication: "Use OAuth 2.0 ou Personal Access Tokens",
-        payments: "Clover Payments API com PCI compliance",
-        webhooks: "Configure em Dashboard → Settings → Webhooks",
-        errors: "401=Token inválido, 429=Rate limit, 500=Erro servidor"
+        authentication: "Use OAuth 2.0",
+        payments: "Clover Payments API",
+        webhooks: "Configure em Settings",
+        errors: "401=Token, 429=Rate limit"
     };
     return faqs[topic] || "Tópico não encontrado";
 }
-// ============ WEB API ============
 app.post("/api/login", (req, res) => {
     const { token } = req.body;
     if (!token || !VALID_TOKENS.includes(token)) {
@@ -93,7 +71,9 @@ app.post("/api/chat", async (req, res) => {
         if (message.toLowerCase().includes("artigo") || message.toLowerCase().includes("buscar")) {
             tool_used = "search-articles";
             const articles = await searchArticles(message);
-            response_text = articles.map((a) => `<strong>${a.title}</strong><p>${a.body}</p>`).join("");
+            response_text = articles.length > 0
+                ? articles.map((a) => `<strong>${a.title}</strong><p>${a.body}</p>`).join("")
+                : "Nenhum artigo encontrado";
         }
         else if (message.toLowerCase().includes("guia")) {
             tool_used = "get-integration-guide";
@@ -110,75 +90,19 @@ app.post("/api/chat", async (req, res) => {
         else {
             tool_used = "search-articles";
             const articles = await searchArticles(message);
-            response_text = articles.map((a) => `<strong>${a.title}</strong><p>${a.body}</p>`).join("");
+            response_text = articles.length > 0
+                ? articles.map((a) => `<strong>${a.title}</strong><p>${a.body}</p>`).join("")
+                : "Nenhum artigo encontrado";
         }
         res.json({ message: response_text, tool_used });
     }
     catch (error) {
+        console.error("Chat error:", error);
         res.status(500).json({ error: "Erro ao processar" });
     }
 });
 app.use(express.static(frontendPath));
-// ============ MCP SERVER ============
-async function startMCPServer() {
-    const mcpServer = new Server({
-        name: "intercom-help-center",
-        version: "1.0.0",
-    });
-    mcpServer.setRequestHandler({ method: "tools/list" }, async () => ({
-        tools: [
-            {
-                name: "search-articles",
-                description: "Busca artigos",
-                inputSchema: { type: "object", properties: { query: { type: "string" } }, required: ["query"] }
-            },
-            {
-                name: "get-integration-guide",
-                description: "Guia de integração",
-                inputSchema: { type: "object", properties: { level: { type: "string" } } }
-            },
-            {
-                name: "get-api-examples",
-                description: "Exemplos de código",
-                inputSchema: { type: "object", properties: { language: { type: "string" } } }
-            },
-            {
-                name: "get-faq",
-                description: "Perguntas frequentes",
-                inputSchema: { type: "object", properties: { topic: { type: "string" } } }
-            }
-        ]
-    }));
-    mcpServer.setRequestHandler({ method: "tools/call" }, async (request) => {
-        const { name, arguments: args } = request.params;
-        let result = "";
-        switch (name) {
-            case "search-articles":
-                const articles = await searchArticles(args.query);
-                result = articles.map((a) => `${a.title}: ${a.body}`).join("\n");
-                break;
-            case "get-integration-guide":
-                result = await getIntegrationGuide(args.level || "beginner");
-                break;
-            case "get-api-examples":
-                result = await getApiExamples(args.language || "javascript");
-                break;
-            case "get-faq":
-                result = await getFaq(args.topic || "authentication");
-                break;
-            default:
-                throw new Error(`Tool desconhecida: ${name}`);
-        }
-        return { type: "text", text: result };
-    });
-    const transport = new StdioServerTransport();
-    await mcpServer.connect(transport);
-}
-// ============ STARTUP ============
 app.listen(PORT, () => {
     console.log(`🌐 Web em http://localhost:${PORT}`);
 });
-if (!process.stdin.isTTY) {
-    startMCPServer().catch(console.error);
-}
 export default app;
