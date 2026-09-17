@@ -2,7 +2,7 @@ import express from "express";
 import path from "path";
 import jwt from "jsonwebtoken";
 import rateLimit from "express-rate-limit";
-import { Server, ListToolsRequestSchema, CallToolRequestSchema, } from "@modelcontextprotocol/sdk/server/index.js";
+import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -119,50 +119,37 @@ app.post("/api/chat", async (req, res) => {
     }
 });
 app.use(express.static(frontendPath));
-// ============ MCP SERVER (só roda se Claude Desktop conectar) ============
+// ============ MCP SERVER ============
 async function startMCPServer() {
     const mcpServer = new Server({
         name: "intercom-help-center",
         version: "1.0.0",
     });
-    mcpServer.setRequestHandler(ListToolsRequestSchema, async () => ({
+    mcpServer.setRequestHandler({ method: "tools/list" }, async () => ({
         tools: [
             {
                 name: "search-articles",
-                description: "Busca artigos no Help Center",
-                inputSchema: {
-                    type: "object",
-                    properties: { query: { type: "string" } },
-                    required: ["query"],
-                },
+                description: "Busca artigos",
+                inputSchema: { type: "object", properties: { query: { type: "string" } }, required: ["query"] }
             },
             {
                 name: "get-integration-guide",
-                description: "Retorna guia de integração",
-                inputSchema: {
-                    type: "object",
-                    properties: { level: { type: "string" } },
-                },
+                description: "Guia de integração",
+                inputSchema: { type: "object", properties: { level: { type: "string" } } }
             },
             {
                 name: "get-api-examples",
                 description: "Exemplos de código",
-                inputSchema: {
-                    type: "object",
-                    properties: { language: { type: "string" } },
-                },
+                inputSchema: { type: "object", properties: { language: { type: "string" } } }
             },
             {
                 name: "get-faq",
                 description: "Perguntas frequentes",
-                inputSchema: {
-                    type: "object",
-                    properties: { topic: { type: "string" } },
-                },
-            },
-        ],
+                inputSchema: { type: "object", properties: { topic: { type: "string" } } }
+            }
+        ]
     }));
-    mcpServer.setRequestHandler(CallToolRequestSchema, async (request) => {
+    mcpServer.setRequestHandler({ method: "tools/call" }, async (request) => {
         const { name, arguments: args } = request.params;
         let result = "";
         switch (name) {
@@ -189,12 +176,9 @@ async function startMCPServer() {
 }
 // ============ STARTUP ============
 app.listen(PORT, () => {
-    console.log(`🌐 Web Server em http://localhost:${PORT}`);
-    console.log(`📝 Página: https://mcp-intercom-help-center-piloto-v2.onrender.com`);
+    console.log(`🌐 Web em http://localhost:${PORT}`);
 });
-// MCP ativa só se Claude Desktop conectar (stdin é pipe, não TTY)
 if (!process.stdin.isTTY) {
     startMCPServer().catch(console.error);
-    console.log("🔌 MCP Server pronto para Claude Desktop");
 }
 export default app;

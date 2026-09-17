@@ -2,11 +2,7 @@ import express from "express";
 import path from "path";
 import jwt from "jsonwebtoken";
 import rateLimit from "express-rate-limit";
-import {
-  Server,
-  ListToolsRequestSchema,
-  CallToolRequestSchema,
-} from "@modelcontextprotocol/sdk/server/index.js";
+import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 
 const app = express();
@@ -138,7 +134,7 @@ app.post("/api/chat", async (req, res) => {
 
 app.use(express.static(frontendPath));
 
-// ============ MCP SERVER (só roda se Claude Desktop conectar) ============
+// ============ MCP SERVER ============
 
 async function startMCPServer() {
   const mcpServer = new Server({
@@ -146,68 +142,61 @@ async function startMCPServer() {
     version: "1.0.0",
   });
 
-  mcpServer.setRequestHandler(ListToolsRequestSchema, async () => ({
-    tools: [
-      {
-        name: "search-articles",
-        description: "Busca artigos no Help Center",
-        inputSchema: {
-          type: "object" as const,
-          properties: { query: { type: "string" } },
-          required: ["query"],
+  mcpServer.setRequestHandler(
+    { method: "tools/list" } as any,
+    async () => ({
+      tools: [
+        {
+          name: "search-articles",
+          description: "Busca artigos",
+          inputSchema: { type: "object" as const, properties: { query: { type: "string" } }, required: ["query"] }
         },
-      },
-      {
-        name: "get-integration-guide",
-        description: "Retorna guia de integração",
-        inputSchema: {
-          type: "object" as const,
-          properties: { level: { type: "string" } },
+        {
+          name: "get-integration-guide",
+          description: "Guia de integração",
+          inputSchema: { type: "object" as const, properties: { level: { type: "string" } } }
         },
-      },
-      {
-        name: "get-api-examples",
-        description: "Exemplos de código",
-        inputSchema: {
-          type: "object" as const,
-          properties: { language: { type: "string" } },
+        {
+          name: "get-api-examples",
+          description: "Exemplos de código",
+          inputSchema: { type: "object" as const, properties: { language: { type: "string" } } }
         },
-      },
-      {
-        name: "get-faq",
-        description: "Perguntas frequentes",
-        inputSchema: {
-          type: "object" as const,
-          properties: { topic: { type: "string" } },
-        },
-      },
-    ],
-  }));
+        {
+          name: "get-faq",
+          description: "Perguntas frequentes",
+          inputSchema: { type: "object" as const, properties: { topic: { type: "string" } } }
+        }
+      ]
+    })
+  );
 
-  mcpServer.setRequestHandler(CallToolRequestSchema, async (request) => {
-    const { name, arguments: args } = request.params;
-    let result = "";
+  mcpServer.setRequestHandler(
+    { method: "tools/call" } as any,
+    async (request: any) => {
+      const { name, arguments: args } = request.params;
+      let result = "";
 
-    switch (name) {
-      case "search-articles":
-        const articles = await searchArticles(args.query);
-        result = articles.map((a: any) => `${a.title}: ${a.body}`).join("\n");
-        break;
-      case "get-integration-guide":
-        result = await getIntegrationGuide(args.level || "beginner");
-        break;
-      case "get-api-examples":
-        result = await getApiExamples(args.language || "javascript");
-        break;
-      case "get-faq":
-        result = await getFaq(args.topic || "authentication");
-        break;
-      default:
-        throw new Error(`Tool desconhecida: ${name}`);
+      switch (name) {
+        case "search-articles":
+          const articles = await searchArticles(args.query);
+          result = articles.map((a: any) => `${a.title}: ${a.body}`).join("\n");
+          break;
+        case "get-integration-guide":
+          result = await getIntegrationGuide(args.level || "beginner");
+          break;
+        case "get-api-examples":
+          result = await getApiExamples(args.language || "javascript");
+          break;
+        case "get-faq":
+          result = await getFaq(args.topic || "authentication");
+          break;
+        default:
+          throw new Error(`Tool desconhecida: ${name}`);
+      }
+
+      return { type: "text", text: result };
     }
-
-    return { type: "text", text: result };
-  });
+  );
 
   const transport = new StdioServerTransport();
   await mcpServer.connect(transport);
@@ -216,14 +205,11 @@ async function startMCPServer() {
 // ============ STARTUP ============
 
 app.listen(PORT, () => {
-  console.log(`🌐 Web Server em http://localhost:${PORT}`);
-  console.log(`📝 Página: https://mcp-intercom-help-center-piloto-v2.onrender.com`);
+  console.log(`🌐 Web em http://localhost:${PORT}`);
 });
 
-// MCP ativa só se Claude Desktop conectar (stdin é pipe, não TTY)
 if (!process.stdin.isTTY) {
   startMCPServer().catch(console.error);
-  console.log("🔌 MCP Server pronto para Claude Desktop");
 }
 
 export default app;
