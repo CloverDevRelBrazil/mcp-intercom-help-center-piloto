@@ -34,14 +34,14 @@ app.get("/api/search", [query("query").notEmpty()], async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty())
         return res.status(400).json({ errors: errors.array() });
-    const { q } = req.query;
+    const { query: searchQuery } = req.query;
     const mockArticles = [
         { id: "1", title: "Como Integrar com Clover", content: "Guia...", url: "https://docs.clover.com" },
         { id: "2", title: "API REST Clover", content: "Documentação...", url: "https://docs.clover.com/api" },
         { id: "3", title: "Autenticação OAuth 2.0", content: "Como...", url: "https://docs.clover.com/auth" }
     ];
-    const filtered = mockArticles.filter(a => a.title.toLowerCase().includes(q.toLowerCase()));
-    res.json({ query: q, total: filtered.length, articles: filtered });
+    const filtered = mockArticles.filter(a => a.title.toLowerCase().includes(searchQuery.toLowerCase()));
+    res.json({ query: searchQuery, total: filtered.length, articles: filtered });
 });
 app.use(express.static(frontendPath));
 app.get("/", (req, res) => res.sendFile(path.join(frontendPath, "index.html")));
