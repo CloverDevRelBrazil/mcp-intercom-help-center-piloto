@@ -16,6 +16,10 @@
     .message.user { background: #004400; color: white; align-self: flex-end; }
     .message.assistant { background: #e8e8e8; color: #333; align-self: flex-start; }
     .message.error { background: #ffcccc; color: #cc0000; align-self: flex-start; }
+    .message-content { line-height: 1.5; }
+    .message-content img { max-width: 100%; height: auto; margin: 10px 0; }
+    .message-content p { margin: 5px 0; }
+    .message-content a { color: #004400; text-decoration: underline; }
     .message-tool { font-size: 12px; opacity: 0.7; margin-top: 5px; }
     .input-area { padding: 15px; border-top: 1px solid #eee; display: flex; gap: 10px; }
     input { flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 4px; }
@@ -162,35 +166,36 @@
         }
 
         const data = await response.json();
-        addMessageToChat('assistant', data.message, data.tool_used);
+        addMessageToChat('assistant', data.message, data.tool_used, true);
       } catch (error) {
         addMessageToChat('error', 'Erro ao processar mensagem');
       }
     }
 
-    function addMessageToChat(role, content, tool) {
+    function addMessageToChat(role, content, tool, isHtml = false) {
       const msgEl = document.createElement('div');
       msgEl.className = `message ${role}`;
       
-      let html = `<div class="message-content">${escapeHtml(content)}</div>`;
-      if (tool) {
-        html += `<div class="message-tool">Tool: ${tool}</div>`;
+      const contentDiv = document.createElement('div');
+      contentDiv.className = 'message-content';
+      
+      if (isHtml && role === 'assistant') {
+        contentDiv.innerHTML = content;
+      } else {
+        contentDiv.textContent = content;
       }
       
-      msgEl.innerHTML = html;
+      msgEl.appendChild(contentDiv);
+      
+      if (tool) {
+        const toolDiv = document.createElement('div');
+        toolDiv.className = 'message-tool';
+        toolDiv.textContent = `Tool: ${tool}`;
+        msgEl.appendChild(toolDiv);
+      }
+      
       messagesList.appendChild(msgEl);
       messagesList.scrollTop = messagesList.scrollHeight;
-    }
-
-    function escapeHtml(text) {
-      const map = {
-        '&': '&amp;',
-        '<': '&lt;',
-        '>': '&gt;',
-        '"': '&quot;',
-        "'": '&#039;'
-      };
-      return text.replace(/[&<>"']/g, (m) => map[m]);
     }
 
     function showLoginModal() {
