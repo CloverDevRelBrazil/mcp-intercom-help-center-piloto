@@ -2,7 +2,6 @@ import express from "express";
 import path from "path";
 import jwt from "jsonwebtoken";
 import rateLimit from "express-rate-limit";
-import fetch from "node-fetch";
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 
@@ -121,7 +120,6 @@ app.post("/api/chat", async (req, res) => {
       tool_used = "get-faq";
       response_text = await getFaq("authentication");
     } else {
-      // Default: search
       tool_used = "search-articles";
       const articles = await searchArticles(message);
       response_text = articles.length > 0 
@@ -192,7 +190,6 @@ class IntercomMCPServer {
   }
 
   private setupHandlers() {
-    // List Tools
     this.server.setRequestHandler(
       { method: "tools/list" } as any,
       async () => ({
@@ -242,7 +239,6 @@ class IntercomMCPServer {
       })
     );
 
-    // Call Tool
     this.server.setRequestHandler(
       { method: "tools/call" } as any,
       async (request: any) => {
@@ -288,12 +284,10 @@ class IntercomMCPServer {
 
 // ============ STARTUP ============
 
-// Inicia Web Server
 app.listen(PORT, () => {
   console.log(`🌐 Web Server rodando em http://localhost:${PORT}`);
 });
 
-// Inicia MCP Server (se stdin for um pipe do Claude Desktop)
 const mcpServer = new IntercomMCPServer();
 if (!process.stdin.isTTY) {
   mcpServer.run().catch(console.error);
