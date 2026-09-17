@@ -1,201 +1,264 @@
 import express from "express";
+import path from "path";
 import jwt from "jsonwebtoken";
 import rateLimit from "express-rate-limit";
-import { query } from "express-validator";
-import axios from "axios";
-import path from "path";
-import { fileURLToPath } from "url";
-import dotenv from "dotenv";
-dotenv.config();
+import fetch from "node-fetch";
+import { Server } from "@modelcontextprotocol/sdk/server/index.js";
+import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+// Express Setup
 const app = express();
 const PORT = process.env.PORT || 3000;
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const frontendPath = path.join(__dirname, "../frontend");
+const JWT_SECRET = process.env.JWT_SECRET || "meu_secret_super_seguro_12345";
+const VALID_TOKENS = (process.env.VALID_TOKENS || "demo-token,dev-client-1").split(",");
+const INTERCOM_ACCESS_TOKEN = process.env.INTERCOM_ACCESS_TOKEN || "";
+const INTERCOM_WORKSPACE_ID = process.env.INTERCOM_WORKSPACE_ID || "";
+const frontendPath = path.join(import.meta.dirname, "../frontend");
+// Middleware
 app.use((req, res, next) => {
-    res.header('Access-Control-Allow-Origin', 'https://mcp-intercom-help-center-piloto-v2.onrender.com');
-    res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-    res.header('Access-Control-Allow-Credentials', 'true');
-    if (req.method === 'OPTIONS')
+    res.header("Access-Control-Allow-Origin", "*");
+    res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization");
+    res.header("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+    if (req.method === "OPTIONS")
         return res.sendStatus(200);
     next();
 });
 app.use(express.json());
-app.use(rateLimit({ windowMs: 60 * 60 * 1000, max: 100 }));
-// MCP TOOLS
-const mcpTools = {
-    "get-integration-guide": {
-        description: "Guia passo a passo para integrar com Clover",
-        inputSchema: {
-            type: "object",
-            properties: {
-                level: { type: "string", enum: ["beginner", "intermediate", "advanced"], description: "Nível de experiência" }
-            }
-        }
-    },
-    "search-articles": {
-        description: "Busca artigos no Help Center Intercom sobre integração Clover",
-        inputSchema: {
-            type: "object",
-            properties: {
-                query: { type: "string", description: "Termo de busca" },
-                limit: { type: "number", description: "Máximo de resultados" }
-            },
-            required: ["query"]
-        }
-    },
-    "get-api-examples": {
-        description: "Exemplos de código para integração com Clover API",
-        inputSchema: {
-            type: "object",
-            properties: {
-                language: { type: "string", enum: ["javascript", "python", "java", "php", "golang"], description: "Linguagem de programação" },
-                endpoint: { type: "string", description: "Endpoint específico (ex: payments, orders)" }
-            },
-            required: ["language"]
-        }
-    },
-    "get-faq": {
-        description: "Perguntas frequentes sobre integração Clover",
-        inputSchema: {
-            type: "object",
-            properties: {
-                topic: { type: "string", description: "Tópico da FAQ (ex: authentication, payments, webhooks)" }
-            }
-        }
-    }
-};
-// Tool Handlers
-async function handleTool(toolName, input) {
-    const accessToken = process.env.INTERCOM_ACCESS_TOKEN;
-    switch (toolName) {
-        case "get-integration-guide": {
-            const guides = {
-                beginner: "# Guia Iniciante - Integração Clover\n1. Crie conta Clover\n2. Gere API Keys\n3. Use webhooks\n4. Teste com sandbox",
-                intermediate: "# Guia Intermediário\n1. OAuth2 setup\n2. Webhooks avançados\n3. Sincronização dados\n4. Tratamento erros",
-                advanced: "# Guia Avançado\n1. Multi-tenant\n2. Custom flows\n3. Performance tuning\n4. Security hardening"
-            };
-            return guides[input.level] || guides.beginner;
-        }
-        case "search-articles": {
-            try {
-                const response = await axios.get('https://api.intercom.io/articles', {
-                    headers: {
-                        'Authorization': `Bearer ${accessToken}`,
-                        'Accept': 'application/json'
-                    },
-                    params: {
-                        query: input.query,
-                        per_page: input.limit || 5
-                    }
-                });
-                const articles = (response.data.data || []).slice(0, input.limit || 5);
-                return articles.map((a) => `- **${a.title}**\n  ${a.body?.substring(0, 100)}...\n  Link: https://help.intercom.com/${a.slug}`).join('\n\n');
-            }
-            catch (error) {
-                return `Erro ao buscar artigos: ${error}`;
-            }
-        }
-        case "get-api-examples": {
-            const examples = {
-                javascript: {
-                    payments: "const clover = require('clover-sdk');\nconst payment = await clover.payments.create({ amount: 1000 });",
-                    orders: "const order = await clover.orders.create({ items: [...], total: 5000 });"
-                },
-                python: {
-                    payments: "from clover_sdk import Client\npayment = client.payments.create(amount=1000)",
-                    orders: "order = client.orders.create(items=[...], total=5000)"
-                },
-                java: {
-                    payments: "CloverClient client = new CloverClient();\nPayment payment = client.createPayment(1000);",
-                    orders: "Order order = client.createOrder(items, 5000);"
-                },
-                php: {
-                    payments: "$clover = new CloverClient();\n$payment = $clover->createPayment(1000);",
-                    orders: "$order = $clover->createOrder($items, 5000);"
-                },
-                golang: {
-                    payments: "payment := client.CreatePayment(1000)",
-                    orders: "order := client.CreateOrder(items, 5000)"
-                }
-            };
-            const lang = input.language || "javascript";
-            const endpoint = input.endpoint || "payments";
-            return examples[lang]?.[endpoint] || "Exemplo não disponível";
-        }
-        case "get-faq": {
-            const faqs = {
-                authentication: "**Como autenticar?**\n1. Gere API key no dashboard\n2. Use Bearer token\n3. Inclua em headers",
-                payments: "**Como processar pagamentos?**\n1. Use endpoint /payments\n2. Envie amount, currency, card\n3. Receba payment_id",
-                webhooks: "**Como usar webhooks?**\n1. Configure endpoint em dashboard\n2. Receba eventos em tempo real\n3. Processe em seu backend",
-                errors: "**Tratamento de erros**\n- 401: Autenticação falhou\n- 400: Dados inválidos\n- 429: Rate limit excedido"
-            };
-            const topic = input.topic || "authentication";
-            return faqs[topic] || "FAQ não encontrada";
-        }
-        default:
-            return "Tool não encontrada";
-    }
-}
-// MCP Endpoints
-app.post("/api/login", (req, res) => {
-    const { token: clientToken } = req.body;
-    const validTokens = process.env.VALID_TOKENS?.split(",") || ["demo-token"];
-    if (!validTokens.includes(clientToken))
-        return res.status(401).json({ error: "Token inválido" });
-    const token = jwt.sign({ token: clientToken }, process.env.JWT_SECRET || "dev-secret-key", { expiresIn: "24h" });
-    res.json({ jwt: token });
+const limiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 100,
+    message: "Muitas requisições, tente mais tarde"
 });
-// MCP Tools endpoint
+app.use(limiter);
+// ============ TOOLS COMPARTILHADAS ============
+async function searchArticles(query) {
+    const response = await fetch(`https://api.intercom.io/articles/search?query=${encodeURIComponent(query)}`, {
+        headers: {
+            Authorization: `Bearer ${INTERCOM_ACCESS_TOKEN}`,
+            Accept: "application/json"
+        }
+    });
+    if (!response.ok)
+        throw new Error(`Erro Intercom: ${response.status}`);
+    const data = await response.json();
+    return data.data ? data.data.slice(0, 5) : [];
+}
+async function getIntegrationGuide(level) {
+    const guides = {
+        beginner: "**Guia para Iniciantes**\n\n1. Crie uma conta no Clover\n2. Acesse o dashboard\n3. Gere suas credenciais API\n4. Implemente o OAuth\n\n[Leia mais](https://help.intercom.com)",
+        intermediate: "**Guia Intermediário**\n\n1. Configure webhooks\n2. Implemente retry logic\n3. Adicione logging\n4. Teste com sandbox\n\n[Documentação](https://help.intercom.com)",
+        advanced: "**Guia Avançado**\n\n1. Arquitetura escalável\n2. Load balancing\n3. Caching distribuído\n4. Monitoramento em produção\n\n[Arquitetura](https://help.intercom.com)"
+    };
+    return guides[level] || guides.beginner;
+}
+async function getApiExamples(language) {
+    const examples = {
+        javascript: `// JavaScript\nconst response = await fetch('https://api.intercom.io/...')\nconst data = await response.json()`,
+        python: `# Python\nimport requests\nresponse = requests.get('https://api.intercom.io/...')\ndata = response.json()`,
+        java: `// Java\nHttpClient client = HttpClient.newHttpClient();\nHttpRequest request = HttpRequest.newBuilder()...`,
+        php: `<?php\n$ch = curl_init();\ncurl_setopt($ch, CURLOPT_URL, 'https://api.intercom.io/...');`
+    };
+    return examples[language] || examples.javascript;
+}
+async function getFaq(topic) {
+    const faqs = {
+        authentication: "**Como autenticar?**\n\nUse OAuth 2.0 ou tokens de acesso pessoal.",
+        payments: "**Como integrar pagamentos?**\n\nUse Clover Payments API com PCI compliance.",
+        webhooks: "**Como configurar webhooks?**\n\nAcesse Settings → Webhooks → Configure URLs.",
+        errors: "**Erros comuns?**\n\n- 401: Token inválido\n- 429: Rate limit\n- 500: Erro servidor"
+    };
+    return faqs[topic] || "Tópico não encontrado";
+}
+// ============ WEB API ENDPOINTS ============
+app.post("/api/login", (req, res) => {
+    const { token } = req.body;
+    if (!token || !VALID_TOKENS.includes(token)) {
+        return res.status(401).json({ error: "Token inválido" });
+    }
+    const jwt_token = jwt.sign({ token }, JWT_SECRET, { expiresIn: "24h" });
+    res.json({ jwt: jwt_token });
+});
+app.post("/api/chat", async (req, res) => {
+    try {
+        const { message } = req.body;
+        const auth = req.headers.authorization;
+        if (!auth?.startsWith("Bearer ")) {
+            return res.status(401).json({ error: "Não autorizado" });
+        }
+        let tool_used = "";
+        let response_text = "";
+        if (message.toLowerCase().includes("buscar") || message.toLowerCase().includes("artigo") || message.toLowerCase().includes("ajuda")) {
+            tool_used = "search-articles";
+            const articles = await searchArticles(message);
+            response_text = articles.length > 0
+                ? articles.map((a) => `- ${a.title}: ${a.body}`).join("\n")
+                : "Nenhum artigo encontrado";
+        }
+        else if (message.toLowerCase().includes("guia") || message.toLowerCase().includes("iniciante")) {
+            tool_used = "get-integration-guide";
+            response_text = await getIntegrationGuide("beginner");
+        }
+        else if (message.toLowerCase().includes("exemplo") || message.toLowerCase().includes("código")) {
+            tool_used = "get-api-examples";
+            response_text = await getApiExamples("javascript");
+        }
+        else if (message.toLowerCase().includes("dúvida") || message.toLowerCase().includes("faq")) {
+            tool_used = "get-faq";
+            response_text = await getFaq("authentication");
+        }
+        else {
+            // Default: search
+            tool_used = "search-articles";
+            const articles = await searchArticles(message);
+            response_text = articles.length > 0
+                ? articles.map((a) => `<strong>${a.title}</strong><p>${a.body}</p>`).join("")
+                : "Nenhum artigo encontrado";
+        }
+        res.json({ message: response_text, tool_used });
+    }
+    catch (error) {
+        res.status(500).json({ error: "Erro ao processar mensagem" });
+    }
+});
 app.get("/mcp/tools", (req, res) => {
     res.json({
-        tools: Object.entries(mcpTools).map(([name, tool]) => ({
-            name,
-            ...tool
-        }))
+        tools: [
+            { name: "search-articles", description: "Busca artigos no Help Center do Intercom" },
+            { name: "get-integration-guide", description: "Guia de integração (beginner/intermediate/advanced)" },
+            { name: "get-api-examples", description: "Exemplos de código em várias linguagens" },
+            { name: "get-faq", description: "Perguntas frequentes por tópico" }
+        ]
     });
 });
-// MCP Call Tool endpoint
 app.post("/mcp/call-tool", async (req, res) => {
-    const { tool, input } = req.body;
-    if (!mcpTools[tool]) {
-        return res.status(400).json({ error: "Tool não encontrada" });
-    }
     try {
-        const result = await handleTool(tool, input);
+        const { tool, input } = req.body;
+        let result = "";
+        switch (tool) {
+            case "search-articles":
+                result = JSON.stringify(await searchArticles(input.query));
+                break;
+            case "get-integration-guide":
+                result = await getIntegrationGuide(input.level || "beginner");
+                break;
+            case "get-api-examples":
+                result = await getApiExamples(input.language || "javascript");
+                break;
+            case "get-faq":
+                result = await getFaq(input.topic || "authentication");
+                break;
+            default:
+                return res.status(400).json({ error: "Tool não encontrada" });
+        }
         res.json({ result });
     }
     catch (error) {
-        res.status(500).json({ error: String(error) });
+        res.status(500).json({ error: "Erro ao chamar tool" });
     }
 });
-// Chat endpoint (usa tools do MCP)
-app.post("/api/chat", [query("message").notEmpty()], async (req, res) => {
-    const { message } = req.body;
-    // Detectar qual tool usar baseado na mensagem
-    let toolName = "search-articles";
-    let input = { query: message };
-    if (message.toLowerCase().includes("exemplo") || message.toLowerCase().includes("código")) {
-        toolName = "get-api-examples";
-        input = { language: "javascript" };
-    }
-    else if (message.toLowerCase().includes("guia") || message.toLowerCase().includes("como começar")) {
-        toolName = "get-integration-guide";
-        input = { level: "beginner" };
-    }
-    else if (message.toLowerCase().includes("faq") || message.toLowerCase().includes("pergunta")) {
-        toolName = "get-faq";
-        input = { topic: "authentication" };
-    }
-    try {
-        const result = await handleTool(toolName, input);
-        res.json({ message: result, tool_used: toolName });
-    }
-    catch (error) {
-        res.status(500).json({ error: "Erro ao processar" });
-    }
-});
+// Frontend
 app.use(express.static(frontendPath));
-app.get("/", (req, res) => res.sendFile(path.join(frontendPath, "index.html")));
-app.listen(PORT, () => console.log(`MCP Server rodando em ${PORT}`));
+// ============ MCP SERVER ============
+class IntercomMCPServer {
+    constructor() {
+        this.server = new Server({
+            name: "intercom-help-center-mcp",
+            version: "1.0.0"
+        });
+        this.setupHandlers();
+    }
+    setupHandlers() {
+        // List Tools
+        this.server.setRequestHandler({ method: "tools/list" }, async () => ({
+            tools: [
+                {
+                    name: "search-articles",
+                    description: "Busca artigos no Help Center do Intercom",
+                    inputSchema: {
+                        type: "object",
+                        properties: {
+                            query: { type: "string", description: "Termo de busca" }
+                        },
+                        required: ["query"]
+                    }
+                },
+                {
+                    name: "get-integration-guide",
+                    description: "Retorna guia de integração",
+                    inputSchema: {
+                        type: "object",
+                        properties: {
+                            level: { type: "string", enum: ["beginner", "intermediate", "advanced"] }
+                        }
+                    }
+                },
+                {
+                    name: "get-api-examples",
+                    description: "Retorna exemplos de código",
+                    inputSchema: {
+                        type: "object",
+                        properties: {
+                            language: { type: "string", enum: ["javascript", "python", "java", "php"] }
+                        }
+                    }
+                },
+                {
+                    name: "get-faq",
+                    description: "Retorna FAQ por tópico",
+                    inputSchema: {
+                        type: "object",
+                        properties: {
+                            topic: { type: "string", enum: ["authentication", "payments", "webhooks", "errors"] }
+                        }
+                    }
+                }
+            ]
+        }));
+        // Call Tool
+        this.server.setRequestHandler({ method: "tools/call" }, async (request) => {
+            const { name, arguments: args } = request.params;
+            let result = "";
+            try {
+                switch (name) {
+                    case "search-articles":
+                        const articles = await searchArticles(args.query);
+                        result = JSON.stringify(articles, null, 2);
+                        break;
+                    case "get-integration-guide":
+                        result = await getIntegrationGuide(args.level || "beginner");
+                        break;
+                    case "get-api-examples":
+                        result = await getApiExamples(args.language || "javascript");
+                        break;
+                    case "get-faq":
+                        result = await getFaq(args.topic || "authentication");
+                        break;
+                    default:
+                        throw new Error(`Tool desconhecida: ${name}`);
+                }
+            }
+            catch (error) {
+                return {
+                    type: "text",
+                    text: `Erro: ${error instanceof Error ? error.message : "Erro desconhecido"}`
+                };
+            }
+            return { type: "text", text: result };
+        });
+    }
+    async run() {
+        const transport = new StdioServerTransport();
+        await this.server.connect(transport);
+        console.log("MCP Server conectado via stdio");
+    }
+}
+// ============ STARTUP ============
+// Inicia Web Server
+app.listen(PORT, () => {
+    console.log(`🌐 Web Server rodando em http://localhost:${PORT}`);
+});
+// Inicia MCP Server (se stdin for um pipe do Claude Desktop)
+const mcpServer = new IntercomMCPServer();
+if (!process.stdin.isTTY) {
+    mcpServer.run().catch(console.error);
+}
+export default app;
