@@ -11,7 +11,6 @@ const INTERCOM_ACCESS_TOKEN = process.env.INTERCOM_ACCESS_TOKEN || "";
 
 const frontendPath = path.join(import.meta.dirname, "../frontend");
 
-// Middleware
 app.use((req, res, next) => {
   res.header("Access-Control-Allow-Origin", "*");
   res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization");
@@ -28,29 +27,42 @@ const limiter = rateLimit({
 });
 app.use(limiter);
 
-// ============ TOOLS ============
+// MOCK DATA (fallback)
+const mockArticles = [
+  { title: "Guia de Integração", body: "Como integrar sua app com Clover" },
+  { title: "Certificação Clover", body: "Processo de certificação" }
+];
 
 async function searchArticles(query: string) {
-  const response = await fetch(
-    `https://api.intercom.io/articles/search?query=${encodeURIComponent(query)}`,
-    {
-      headers: {
-        Authorization: `Bearer ${INTERCOM_ACCESS_TOKEN}`,
-        Accept: "application/json"
+  try {
+    const response = await fetch(
+      `https://api.intercom.io/articles/search?query=${encodeURIComponent(query)}`,
+      {
+        headers: {
+          Authorization: `Bearer ${INTERCOM_ACCESS_TOKEN}`,
+          Accept: "application/json"
+        }
       }
-    }
-  );
+    );
 
-  if (!response.ok) throw new Error(`Erro Intercom: ${response.status}`);
-  const data = await response.json() as any;
-  return data.data ? data.data.slice(0, 5) : [];
+    if (!response.ok) {
+      console.error(`Intercom error: ${response.status}`);
+      return mockArticles;
+    }
+    
+    const data = await response.json() as any;
+    return data.data?.slice(0, 5) || mockArticles;
+  } catch (error) {
+    console.error("Fetch error:", error);
+    return mockArticles;
+  }
 }
 
 async function getIntegrationGuide(level: string) {
   const guides: Record<string, string> = {
-    beginner: "**Guia para Iniciantes**\n\n1. Crie uma conta no Clover\n2. Acesse o dashboard\n3. Gere suas credenciais API\n4. Implemente o OAuth",
-    intermediate: "**Guia Intermediário**\n\n1. Configure webhooks\n2. Implemente retry logic\n3. Adicione logging\n4. Teste com sandbox",
-    advanced: "**Guia Avançado**\n\n1. Arquitetura escalável\n2. Load balancing\n3. Caching distribuído\n4. Monitoramento em produção"
+    beginner: "**Guia para Iniciantes**\n\n1. Crie uma conta\n2. Configure a API\n3. Implemente OAuth",
+    intermediate: "**Intermediário**\n\n1. Configure webhooks\n2. Implemente retry",
+    advanced: "**Avançado**\n\n1. Load balancing\n2. Caching"
   };
   return guides[level] || guides.beginner;
 }
@@ -67,15 +79,13 @@ async function getApiExamples(language: string) {
 
 async function getFaq(topic: string) {
   const faqs: Record<string, string> = {
-    authentication: "**Como autenticar?**\n\nUse OAuth 2.0 ou tokens de acesso pessoal.",
-    payments: "**Como integrar pagamentos?**\n\nUse Clover Payments API com PCI compliance.",
-    webhooks: "**Como configurar webhooks?**\n\nAcesse Settings → Webhooks",
-    errors: "**Erros comuns?**\n\n- 401: Token inválido\n- 429: Rate limit\n- 500: Erro servidor"
+    authentication: "**Autenticação**: Use OAuth 2.0",
+    payments: "**Pagamentos**: Use Clover Payments API",
+    webhooks: "**Webhooks**: Configure em Settings",
+    errors: "**Erros**: 401=Token, 429=Rate limit"
   };
   return faqs[topic] || "Tópico não encontrado";
 }
-
-// ============ API ============
 
 app.post("/api/login", (req, res) => {
   const { token } = req.body;
@@ -123,18 +133,15 @@ app.post("/api/chat", async (req, res) => {
 
     res.json({ message: response_text, tool_used });
   } catch (error) {
+    console.error("Chat error:", error);
     res.status(500).json({ error: "Erro ao processar" });
   }
 });
 
-// Frontend
 app.use(express.static(frontendPath));
-
-// ============ STARTUP ============
 
 app.listen(PORT, () => {
   console.log(`🌐 Web Server rodando em http://localhost:${PORT}`);
-  console.log(`MCP: Configure ~/.claude_desktop_config.json para usar como MCP Server`);
 });
 
 export default app;
