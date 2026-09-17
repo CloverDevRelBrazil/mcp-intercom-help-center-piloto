@@ -1,10 +1,11 @@
 import express from "express";
+import jwt from "jsonwebtoken";
 import rateLimit from "express-rate-limit";
 import { query, validationResult } from "express-validator";
-import jwt from "jsonwebtoken";
-import * as dotenv from "dotenv";
+import axios from "axios";
 import path from "path";
 import { fileURLToPath } from "url";
+import dotenv from "dotenv";
 dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -35,15 +36,37 @@ app.get("/api/search", [query("query").notEmpty()], async (req, res) => {
     if (!errors.isEmpty())
         return res.status(400).json({ errors: errors.array() });
     const { query: searchQuery } = req.query;
-    const mockArticles = [
-        { id: "1", title: "Como Integrar com Clover", content: "Guia...", url: "https://docs.clover.com" },
-        { id: "2", title: "API REST Clover", content: "Documentação...", url: "https://docs.clover.com/api" },
-        { id: "3", title: "Autenticação OAuth 2.0", content: "Como...", url: "https://docs.clover.com/auth" }
-    ];
-    const filtered = mockArticles.filter(a => a.title.toLowerCase().includes(searchQuery.toLowerCase()));
-    res.json({ query: searchQuery, total: filtered.length, articles: filtered });
+    const accessToken = process.env.INTERCOM_ACCESS_TOKEN;
+    try {
+        const response = await axios.get('https://api.intercom.io/articles', {
+            headers: {
+                'Authorization': `Bearer ${accessToken}`,
+                'Accept': 'application/json'
+            },
+            params: {
+                query: searchQuery,
+                per_page: 10
+            }
+        });
+        const articles = response.data.data || [];
+        const filtered = articles.filter((a) => a.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            a.body.toLowerCase().includes(searchQuery.toLowerCase()));
+        res.json({
+            query: searchQuery,
+            total: filtered.length,
+            articles: filtered.map((a) => ({
+                id: a.id,
+                title: a.title,
+                content: a.body.substring(0, 150) + '...',
+                url: a.state === 'published' ? `https://help.intercom.com/${a.slug}` : '#'
+            }))
+        });
+    }
+    catch (error) {
+        console.error('Erro ao buscar artigos:', error);
+        res.status(500).json({ error: 'Erro ao buscar artigos do Help Center' });
+    }
 });
 app.use(express.static(frontendPath));
 app.get("/", (req, res) => res.sendFile(path.join(frontendPath, "index.html")));
 app.listen(PORT, () => console.log(`MCP rodando em ${PORT}`));
-export default app;
