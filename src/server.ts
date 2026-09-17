@@ -18,15 +18,11 @@ app.use((req, res, next) => {
   res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   res.header('Access-Control-Allow-Credentials', 'true');
-  if (req.method === 'OPTIONS') {
-    res.sendStatus(200);
-  } else {
-    next();
-  }
+  if (req.method === 'OPTIONS') return res.sendStatus(200);
+  next();
 });
 
 app.use(express.json());
-app.use(express.static(frontendPath));
 app.use(rateLimit({windowMs: 60 * 60 * 1000, max: 100}));
 
 app.post("/api/login", (req: any, res: any) => {
@@ -50,6 +46,7 @@ app.get("/api/search", [query("query").notEmpty()], async (req: any, res: any) =
   res.json({ query: q, total: filtered.length, articles: filtered });
 });
 
+app.use(express.static(frontendPath));
 app.get("/", (req, res) => res.sendFile(path.join(frontendPath, "index.html")));
 app.listen(PORT, () => console.log(`MCP rodando em ${PORT}`));
 export default app;
