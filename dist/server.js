@@ -45,19 +45,27 @@ app.get("/api/search", [query("query").notEmpty()], async (req, res) => {
             },
             params: {
                 query: searchQuery,
-                per_page: 10
+                per_page: 50
             }
         });
         const articles = response.data.data || [];
-        const filtered = articles.filter((a) => a.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            a.body.toLowerCase().includes(searchQuery.toLowerCase()));
+        const searchLower = searchQuery.toLowerCase();
+        const filtered = articles.filter((a) => a.title.toLowerCase().includes(searchLower) ||
+            (a.body && a.body.toLowerCase().includes(searchLower)) ||
+            (a.description && a.description.toLowerCase().includes(searchLower))).sort((a, b) => {
+            const aTitle = a.title.toLowerCase();
+            const bTitle = b.title.toLowerCase();
+            const aMatch = aTitle.includes(searchLower) ? 1 : 0;
+            const bMatch = bTitle.includes(searchLower) ? 1 : 0;
+            return bMatch - aMatch;
+        });
         res.json({
             query: searchQuery,
             total: filtered.length,
             articles: filtered.map((a) => ({
                 id: a.id,
                 title: a.title,
-                content: a.body.substring(0, 150) + '...',
+                content: (a.body || a.description || "").substring(0, 150) + '...',
                 url: a.state === 'published' ? `https://help.intercom.com/${a.slug}` : '#'
             }))
         });
