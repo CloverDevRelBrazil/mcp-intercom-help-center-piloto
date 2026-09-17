@@ -1,5 +1,4 @@
 import express from "express";
-import cors from "cors";
 import rateLimit from "express-rate-limit";
 import { query, validationResult } from "express-validator";
 import jwt from "jsonwebtoken";
@@ -12,7 +11,18 @@ const PORT = process.env.PORT || 3000;
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const frontendPath = path.join(__dirname, "../frontend");
-app.use(cors({ origin: ["https://mcp-devrel-clover.onrender.com", "https://mcp-intercom-help-center-piloto-v2.onrender.com", "http://localhost:3000"], credentials: true }));
+app.use((req, res, next) => {
+    res.header('Access-Control-Allow-Origin', 'https://mcp-intercom-help-center-piloto-v2.onrender.com');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    res.header('Access-Control-Allow-Credentials', 'true');
+    if (req.method === 'OPTIONS') {
+        res.sendStatus(200);
+    }
+    else {
+        next();
+    }
+});
 app.use(express.json());
 app.use(express.static(frontendPath));
 app.use(rateLimit({ windowMs: 60 * 60 * 1000, max: 100 }));
