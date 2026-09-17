@@ -14,7 +14,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const frontendPath = path.join(__dirname, "../frontend");
 
-app.use(cors({origin: ["https://mcp-devrel-clover.onrender.com", "https://mcp-intercom-help-center-piloto-v2.onrender.com", "http://localhost:3000", "*"], credentials: true, methods: ['GET', 'POST', 'OPTIONS'], allowedHeaders: ['Content-Type', 'Authorization']}));
+app.use(cors({origin: ["https://mcp-devrel-clover.onrender.com", "https://mcp-intercom-help-center-piloto-v2.onrender.com", "http://localhost:3000", "http://localhost:5173"], credentials: true, methods: ['GET', 'POST', 'OPTIONS'], allowedHeaders: ['Content-Type', 'Authorization']}));
 app.use(express.json());
 app.use(express.static(frontendPath));
 
